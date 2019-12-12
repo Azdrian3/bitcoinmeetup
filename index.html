@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Meta -->
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="SOLO ETH" />
+    <link rel="apple-touch-icon" href="./icon.png" />
+
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>CoinPlus</title>
+
+    <!-- Styles -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto+Slab"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="manifest" id="manifest" />
+  </head>
+  <body>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: "Roboto Slab", sans-serif;
+        background-image: linear-gradient(to bottom, #fff, #ddd);
+        line-height: 161.8%;
+      }
+
+      section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #ddd7;
+      }
+
+      .title,
+      .address {
+        color: #d81e5b;
+      }
+
+      .logo {
+        object-fit: contain;
+        width: 60%;
+      }
+
+      .balance__total {
+        font-size: 2rem;
+      }
+
+      .qrcode {
+        padding: 2rem;
+      }
+
+      .address {
+        word-break: break-all;
+        text-align: center;
+      }
+
+      .balance_tokens {
+        display: none;
+      }
+
+      button,
+      .button {
+        display: initial;
+        padding: 1rem;
+        border: none;
+        border-radius: 1.66rem;
+        text-decoration: none;
+        text-transform: uppercase;
+        margin: 1.66rem 0;
+        text-align: center;
+        color: #ffffff;
+        background-color: #1565c0;
+        transition: background-color 0.45s cubic-bezier(0.23, 1, 0.32, 1),
+          opacity 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+    </style>
+
+    <section>
+      <img class="logo" src="/img/coinplus-logo.png" />
+      <h1 id="title" class="title" contenteditable="true"></h1>
+      <img id="qrcode" class="qrcode" src="" />
+      <span id="address" class="address"></span>
+      <button onclick="addressToClipboard()">COPY ADDRESS</button>
+    </section>
+
+    <section class="balance">
+      <div>
+        <span id="balance__total" class="balance__total">0</span> <span id="balance__unconfirmed"></span>
+        <span class="balance__token" id="token"></span>
+      </div>
+      <a href="#" id="balance__history" class="balance_history" target="_blank"
+        >History of transactions</a
+      >
+      <a href="#" id="balance__tokens" class="balance_tokens" target="_blank"
+        >View my tokens</a
+      >
+    </section>
+
+    <section class="misc">
+      <a class="button" id="charge" target="_blank">Charge your SOLO</a>
+      <a class="button" id="shop" target="_blank">Order a new SOLO</a>
+      <a href="https://www.coinplus.com/how.html">How it works ?</a>
+    </section>
+
+    <script defer>
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSegments = window.location.pathname.split("/");
+      const token = urlParams.get("t") || urlSegments[1];
+      const address = urlParams.get("a") || urlSegments[2];
+      const titleElm = document.querySelector("#title");
+
+      const tokensResources = {
+        eth: {
+          balance:
+            "https://api.etherscan.io/api?module=account&action=balance&address={address}",
+          history: "https://etherscan.io/address/{address}",
+          tokens: "https://etherscan.io/tokenholdings?a={address}",
+          ratio: 0.000000000000000001
+        },
+        btc: {
+          balance:
+            "https://blockchain.info/balance?active={address}&cors=true",
+          history: "https://www.blockchain.com/btc/address/{address}?sort=0",
+          ratio: 0.00000001
+        }
+      };
+
+      document.querySelector("#shop").href =
+        "https://www.amazon.fr/s?merchant=A6KUVIF1T3RFM";
+      document.querySelector("#token").innerText = token;
+      document.querySelector("#address").innerText = address;
+      document.querySelector("#qrcode").src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" +
+        address;
+      document.querySelector("#balance__history").href = tokensResources[
+        token
+      ].history.replace(/{address}/gi, address);
+      /*document.querySelector("#charge").href =
+        "https://changelly.com/widget/v1?auth=email&from=EUR&to=" +
+        token +
+        "&merchant_id=5e2800913712&address=" +
+        address +
+        "&amount=50&ref_id=5e2800913712&color=1565c0";
+        */
+      document.querySelector("#charge").href =
+        "https://payments.changelly.com/?crypto=" +
+        token.toUpperCase() +
+        "&fiat=EUR&amount=50";
+
+      if (token == "eth") {
+        document.querySelector("#balance__tokens").style.display = "initial";
+        document.querySelector("#balance__tokens").href = tokensResources[
+          token
+        ].tokens.replace(/{address}/gi, address);
+      }
+
+      titleElm.innerText =
+        localStorage.getItem(address) || "Tap to name your SOLO";
+      titleElm.addEventListener("input", function() {
+        localStorage.setItem(address, titleElm.innerText);
+      });
+
+      function addressToClipboard() {
+        var dummy = document.createElement("textarea");
+        document.body.appendChild(dummy);
+        dummy.value = address;
+        dummy.select();
+        document.execCommand("copy");
+        alert("Address copied to clipboard");
+        document.body.removeChild(dummy);
+      }
+
+      function getBalance() {
+        var url = tokensResources[token].balance.replace(
+          /{address}/gi,
+          address
+        );
+        fetch(url)
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(responseJson) {
+            window.res = responseJson;
+            if (token == "btc"){
+              balance = (
+                responseJson[address].final_balance * tokensResources[token].ratio
+              ).toFixed(4); //wei ot eth
+            }
+            if (token == "eth"){
+              balance = (
+                responseJson.result * tokensResources[token].ratio
+              ).toFixed(4); //wei ot eth
+            }
+            document.querySelector("#balance__total").innerText = balance
+            /*
+            if (responseJson.unconfirmed_balance !== 0){
+              document.querySelector("#balance__unconfirmed").innerText = "(unconfirmed: " + (
+              responseJson.unconfirmed_balance * tokensResources[token].ratio
+            ).toFixed(4) + ")";
+            }*/
+          });
+      }
+
+      function getDynamicManifest() {
+        var dynamicManifest = {
+          name: "SOLO " + token,
+          short_name: "SOLO " + token,
+          description: "Save this card for later use",
+          start_url: "index.html?c=" + token + "&a=" + address,
+          background_color: "#000000",
+          theme_color: "#0f4a73",
+          display: "standalone",
+          icons: [
+            {
+              src: "./icon.png",
+              sizes: "256x256",
+              type: "image/png"
+            }
+          ]
+        };
+        const stringManifest = JSON.stringify(dynamicManifest);
+        const blob = new Blob([stringManifest], {
+          type: "application/javascript"
+        });
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector("#manifest").setAttribute("href", manifestURL);
+      }
+
+      getDynamicManifest();
+      getBalance();
+    </script>
+  </body>
+</html>
