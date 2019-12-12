@@ -20,7 +20,6 @@
       href="https://fonts.googleapis.com/css?family=Roboto+Slab"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main.css" />
     <link rel="manifest" id="manifest" />
   </head>
   <body>
@@ -109,17 +108,9 @@
     <script defer>
       const urlParams = new URLSearchParams(window.location.search);
       const urlSegments = window.location.pathname.split("/");
-      const token = urlParams.get("t") || urlSegments[1];
       const address = urlParams.get("a") || urlSegments[2];
       const titleElm = document.querySelector("#title");
       const tokensResources = {
-        eth: {
-          balance:
-            "https://api.etherscan.io/api?module=account&action=balance&address={address}",
-          history: "https://etherscan.io/address/{address}",
-          tokens: "https://etherscan.io/tokenholdings?a={address}",
-          ratio: 0.000000000000000001
-        },
         btc: {
           balance:
             "https://blockchain.info/balance?active={address}&cors=true",
@@ -127,15 +118,12 @@
           ratio: 0.00000001
         }
       };
-      document.querySelector("#shop").href =
-        "https://www.amazon.fr/s?merchant=A6KUVIF1T3RFM";
-      document.querySelector("#token").innerText = token;
       document.querySelector("#address").innerText = address;
       document.querySelector("#qrcode").src =
         "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" +
         address;
       document.querySelector("#balance__history").href = tokensResources[
-        token
+        "btc"
       ].history.replace(/{address}/gi, address);
       /*document.querySelector("#charge").href =
         "https://changelly.com/widget/v1?auth=email&from=EUR&to=" +
@@ -144,16 +132,10 @@
         address +
         "&amount=50&ref_id=5e2800913712&color=1565c0";
         */
+      document.querySelector("#shop").href =
+-        "https://shop.coinplus.com";
       document.querySelector("#charge").href =
-        "https://payments.changelly.com/?crypto=" +
-        token.toUpperCase() +
-        "&fiat=EUR&amount=50";
-      if (token == "eth") {
-        document.querySelector("#balance__tokens").style.display = "initial";
-        document.querySelector("#balance__tokens").href = tokensResources[
-          token
-        ].tokens.replace(/{address}/gi, address);
-      }
+        "https://payments.changelly.com/?crypto=btc&fiat=EUR&amount=50";
       titleElm.innerText =
         localStorage.getItem(address) || "Tap to name your SOLO";
       titleElm.addEventListener("input", function() {
@@ -169,7 +151,7 @@
         document.body.removeChild(dummy);
       }
       function getBalance() {
-        var url = tokensResources[token].balance.replace(
+        var url = tokensResources["btc"].balance.replace(
           /{address}/gi,
           address
         );
@@ -179,31 +161,26 @@
           })
           .then(function(responseJson) {
             window.res = responseJson;
-            if (token == "btc"){
-              balance = (
-                responseJson[address].final_balance * tokensResources[token].ratio
-              ).toFixed(4); //wei ot eth
-            }
-            if (token == "eth"){
-              balance = (
-                responseJson.result * tokensResources[token].ratio
-              ).toFixed(4); //wei ot eth
-            }
+  
+            balance = (
+              responseJson[address].final_balance * tokensResources["btc"].ratio
+            ).toFixed(4); //wei ot eth
+
             document.querySelector("#balance__total").innerText = balance
             /*
             if (responseJson.unconfirmed_balance !== 0){
               document.querySelector("#balance__unconfirmed").innerText = "(unconfirmed: " + (
-              responseJson.unconfirmed_balance * tokensResources[token].ratio
+              responseJson.unconfirmed_balance * tokensResources["btc"].ratio
             ).toFixed(4) + ")";
             }*/
           });
       }
       function getDynamicManifest() {
         var dynamicManifest = {
-          name: "SOLO " + token,
-          short_name: "SOLO " + token,
+          name: "BTC Meetup" ,
+          short_name: "BTC Meetup",
           description: "Save this card for later use",
-          start_url: "index.html?c=" + token + "&a=" + address,
+          start_url: "index.html?&a=" + address,
           background_color: "#000000",
           theme_color: "#0f4a73",
           display: "standalone",
